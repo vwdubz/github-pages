@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Buggy Maze</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            physics: {
+                default: 'arcade',
+                arcade: { gravity: { y: 0 } }
+            }
+        };
+
+        let ball, holes, cursors, levelText, level = 1;
+        const game = new Phaser.Game(config);
+
+        function preload() {
+            this.load.image('ball', 'https://i.imgur.com/3YXt6zQ.png');
+            this.load.image('hole', 'https://i.imgur.com/5Z2Q2Zz.png');
+        }
+
+        function create() {
+            // Create maze walls (simplified for demo)
+            this.physics.world.setBounds(0, 0, 800, 600);
+
+            // Add ball
+            ball = this.physics.add.image(400, 300, 'ball').setCollideWorldBounds(true);
+
+            // Add holes
+            generateHoles.call(this);
+
+            // Add controls
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Add level text
+            levelText = this.add.text(10, 10, `Level: ${level}`, { font: '20px Arial', fill: '#ffffff' });
+        }
+
+        function update() {
+            // Move ball with drift bug
+            if (cursors.left.isDown) ball.setVelocityX(-160);
+            else if (cursors.right.isDown) ball.setVelocityX(160);
+            else ball.setVelocityX(0);
+
+            if (cursors.up.isDown) ball.setVelocityY(-160);
+            else if (cursors.down.isDown) ball.setVelocityY(160);
+            else ball.setVelocityY(0);
+
+            // Add drift bug (ball drifts right slightly)
+            ball.x += 1;
+
+            // Check for collisions with holes
+            this.physics.overlap(ball, holes, () => {
+                alert(`Game Over! You reached Level ${level}.`);
+                this.scene.restart();
+                level = 1;
+            });
+
+            // Check if ball reaches the exit (right side of the screen)
+            if (ball.x > 780) {
+                level++;
+                levelText.setText(`Level: ${level}`);
+                generateHoles.call(this);
+                ball.setPosition(400, 300);
+            }
+        }
+
+        function generateHoles() {
+            if (holes) holes.clear(true, true);
+            holes = this.physics.add.group();
+            for (let i = 0; i < 5 + level; i++) {
+                holes.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'hole');
+            }
+        }
+    </script>
+</body>
+</html>
